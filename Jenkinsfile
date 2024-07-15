@@ -11,6 +11,7 @@ pipeline {
         DOCKER_PASS = 'dockerhub'
         IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
     stages{
         stage("Cleanup Workspace"){
@@ -87,5 +88,15 @@ pipeline {
               }
          }
       }
+
+    // ec2-13-250-64-101.ap-southeast-1.compute.amazonaws.com is Public IPv4 DNS of Jenkins server
+    // gitops-greet-app-cd is CD Job
+     stage("Trigger CD Pipeline") {
+          steps {
+              script {
+                  sh "curl -v -k --user clouduser:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-13-250-64-101.ap-southeast-1.compute.amazonaws.com:8080/job/gitops-greet-app-cd/buildWithParameters?token=gitops-token'"
+              }
+          }
+     }
     }
 }
